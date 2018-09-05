@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqlserver
+  labels:
+    app: mysqlserver
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysqlserver
+  template:
+    metadata:
+      labels:
+        app: mysqlserver
+    spec:
+      containers:
+      - name: mysqlserver
+        image: mysql:5.7
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
+          - name: MYSQL_DATABASE
+            value: user_service
+        ports:
+        - hostPort: 3306
+          containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-data-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysqlserver
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+  selector:
+    app: mysqlserver
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-data
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: mysql-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data-claim
+  labels:
+    app: mysqlserver
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+      

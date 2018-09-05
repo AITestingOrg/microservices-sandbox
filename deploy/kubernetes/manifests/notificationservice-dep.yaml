@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificationservice
+  labels:
+    app: notificationservice
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notificationservice
+  template:
+    metadata:
+      labels:
+        app: notificationservice
+    spec:
+      containers:
+      - name: notificationservice
+        image: aista/notification-service
+        command: ["go", "run", "main.go"]
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        env:
+        - name: RABBIT_HOST
+          value: rabbitmq
+        - name: EUREKA_SERVER
+          value: discoveryservice
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notificationservice
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 8098
+  selector:
+    app: notificationservice

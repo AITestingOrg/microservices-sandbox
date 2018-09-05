@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: aista/front-end
+        imagePullPolicy: Never
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        ports:
+        - hostPort: 4200
+          containerPort: 4200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 4200
+  selector:
+    app: frontend

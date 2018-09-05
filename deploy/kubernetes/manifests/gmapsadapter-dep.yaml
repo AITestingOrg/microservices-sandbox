@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmapsadapter
+  labels:
+    app: gmapsadapter
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gmapsadapter
+  template:
+    metadata:
+      labels:
+        app: gmapsadapter
+    spec:
+      containers:
+      - name: gmapsadapter
+        image: aista/gmaps-adapter
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gmapsadapter
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 8099
+  selector:
+    app: gmapsadapter

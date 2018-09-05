@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edgeservice
+  labels:
+    app: edgeservice
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edgeservice
+  template:
+    metadata:
+      labels:
+        app: edgeservice
+    spec:
+      containers:
+      - name: edgeservice
+        image: aista/edge-service
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        ports:
+        - hostPort: 8080
+          containerPort: 8080
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgeservice
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+  selector:
+    app: edgeservice

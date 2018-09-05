@@ -1,0 +1,250 @@
+version: '2.3'
+
+services:
+
+  edgeservice:
+    image: aista/edge-service
+    mem_limit: 512M
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discoveryservice
+      - logstash
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "tcp://127.0.0.1:25826"
+
+  # notificationservice:
+    # depends_on:
+      # - discoveryservice
+      # - rabbitmq
+    # image: aista/notification-service
+    # mem_limit: 512M
+    # command: notification-service
+    # ports:
+      # - "32700:32700"
+    # environment:
+      # - RABBIT_HOST=rabbitmq
+      # - EUREKA_SERVER=discoveryservice
+
+  discoveryservice:
+    image: aista/eureka
+    mem_limit: 512M
+    depends_on:
+      - logstash
+    ports:
+      - "8761:8761"
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "tcp://127.0.0.1:25826"
+
+#  hystrix-dashboard:
+#    image: kbastani/hystrix-dashboard
+#    container_name: hystrix-dashboard
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    ports:
+#      - 6161:6161
+#
+#  config-service:
+#    build: config-service
+#    container_name: config-service
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    ports:
+#      - 8888:8888
+
+  mysqlserver:
+    image: mysql:5.7
+    mem_limit: 512M
+    depends_on:
+      - logstash
+    volumes:
+      - mysql-data:/var/lib/mysql:rw
+    restart: always
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_USER:
+      MYSQL_PASSWORD:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: 'user_service'
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "tcp://127.0.0.1:25826"
+
+  userservice:
+    image: aista/user-service
+    mem_limit: 512M
+    depends_on:
+      - discoveryservice
+      - mysqlserver
+      - logstash
+    ports:
+      - '8080'
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "tcp://127.0.0.1:25826"
+
+  # mongo:
+    # image: 'mongo:3.4.1'
+    # mem_limit: 512M
+    # container_name: 'mongo'
+    # ports:
+      # - '27017:27017'
+    # volumes:
+      # - 'mongo:/data/db'
+
+#  postgres:
+#    image: postgres
+#    mem_limit: 512M
+#    restart: always
+#    environment:
+#      POSTGRES_DB: 'passenger_db'
+#      POSTGRES_PASSWORD: "admin"
+#      POSTGRES_USER: "admin"
+#      PGDATA: ./postgres-data
+#    ports:
+#      - '5432:5432'
+#    volumes:
+#      - ./db_volume:/var/lib/postgresql
+
+  # rabbitmq:
+    # image: rabbitmq:management
+    # mem_limit: 512M
+    # container_name: 'rabbitmq'
+    # ports:
+      # - "5672:5672"
+      # - "15672:15672"
+
+  # tripmanagementcmd:
+    # image: aista/trip-management-cmd
+    # mem_limit: 512M
+    # environment:
+      # - RABBIT_HOST=rabbitmq
+      # - MONGO_HOST=mongo
+    # ports:
+      # - '8080'
+    # depends_on:
+      # - discoveryservice
+      # - rabbitmq
+      # - mongo
+
+  # tripmanagementquery:
+    # image: aista/trip-management-query
+    # mem_limit: 512M
+    # environment:
+      # - RABBIT_HOST=rabbitmq
+      # - MONGO_HOST=mongo
+    # ports:
+      # - '8080'
+    # depends_on:
+      # - rabbitmq
+      # - mongo
+      # - discoveryservice
+
+  # gmapsadapter:
+    # image: aista/gmaps-adapter
+    # mem_limit: 512M
+    # environment:
+      # - EUREKA_SERVER=discoveryservice
+      # - RABBIT_HOST=rabbitmq
+    # ports:
+      # - '8080'
+    # depends_on:
+      # - discoveryservice
+
+  # calculationservice:
+    # image: aista/calculation-service
+    # mem_limit: 512M
+    # environment:
+      # - EUREKA_SERVER=discoveryservice
+      # - RABBIT_HOST=rabbitmq
+    # command: ["go", "run", "main.go"]
+    # ports:
+      # - '8080'
+    # depends_on:
+      # - discoveryservice
+
+#  passenger:
+#    image: aista/passenger
+#    mem_limit: 512M
+#    ports:
+#      - '8080'
+#    depends_on:
+#      - postgres
+#      - discoveryservice
+#
+#  driver-cmd:
+#    image: aista/driver-cmd
+#    mem_limit: 512M
+#    environment:
+#      - EUREKA_SERVER=discoveryservice
+#    ports:
+#      - '8080'
+#    depends_on:
+#      - rabbitmq
+#      - mongo
+#      - discoveryservice
+#
+#  driver-query:
+#    image: aista/driver-query
+#    mem_limit: 512M
+#    container_name: 'driver-query'
+#    environment:
+#      - RABBIT_HOST=rabbitmq
+#      - MONGO_HOST=mongo
+#    ports:
+#      - "8080"
+#    depends_on:
+#      - rabbitmq
+#      - mongo
+#      - discoveryservice
+
+  # frontend:
+    # image: aista/front-end
+    # mem_limit: 512M
+    # environment:
+      # - EUREKA_SERVER=discoveryservice
+      # - RABBIT_HOST=rabbitmq
+    # ports:
+      # - '4200:4200'
+    # depends_on:
+      # - discoveryservice
+
+      
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
+    ports:
+      - "9200:9200"
+    environment:
+      - "xpack.security.enabled=false"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+      - logstash
+    environment:
+      - "xpack.security.enabled=false"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.4.0
+    ports:
+      - "25826:25826"
+    volumes:
+      - $PWD/logstash:/elk-config
+    command: logstash -f /elk-config/logstash.config
+
+
+volumes:
+  mongo:
+  mysql-data:

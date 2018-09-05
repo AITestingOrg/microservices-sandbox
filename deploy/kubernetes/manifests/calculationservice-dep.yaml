@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calculationservice
+  labels:
+    app: calculationservice
+  namespace: rideshare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calculationservice
+  template:
+    metadata:
+      labels:
+        app: calculationservice
+    spec:
+      containers:
+      - name: calculationservice
+        image: aista/calculation-service
+        resources:
+          limits:
+            cpu: 300m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calculationservice
+  namespace: rideshare
+spec:
+  type: NodePort
+  ports:
+  - port: 8097
+  selector:
+    app: calculationservice
