@@ -26,6 +26,13 @@ spec:
           requests:
             cpu: 100m
             memory: 300Mi
+        env:
+        - name: EUREKA_SERVER
+          value: 'discoveryservice'
+        - name: RABBIT_HOST
+          value: 'rabbitmq'
+        - name: GOOGLE_API_KEY
+          value: 'AIzaSyA-A_VJjmiAKM-xwZpv7RdxDKkV5hzMh4Y'
         imagePullPolicy: Never
 ---
 apiVersion: v1

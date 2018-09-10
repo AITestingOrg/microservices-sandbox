@@ -9,33 +9,35 @@ services:
       - "8080:8080"
     depends_on:
       - discoveryservice
-    logging:
-      driver: syslog
-      options:
-        syslog-address: "tcp://127.0.0.1:24224"
+    # logging:
+      # driver: "fluentd"
+      # options:
+        # fluentd-address: localhost:24224
+        # tag: httpd.access
 
-  # notificationservice:
-    # depends_on:
-      # - discoveryservice
-      # - rabbitmq
-    # image: aista/notification-service
-    # mem_limit: 512M
-    # command: notification-service
-    # ports:
-      # - "32700:32700"
-    # environment:
-      # - RABBIT_HOST=rabbitmq
-      # - EUREKA_SERVER=discoveryservice
+  notificationservice:
+    depends_on:
+      - discoveryservice
+      - rabbitmq
+    image: aista/notification-service
+    mem_limit: 512M
+    command: notification-service
+    ports:
+      - "32700:32700"
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - EUREKA_SERVER=discoveryservice
 
   discoveryservice:
     image: aista/eureka
     mem_limit: 512M
     ports:
       - "8761:8761"
-    logging:
-      driver: syslog
-      options:
-        syslog-address: "tcp://127.0.0.1:24224"
+    # logging:
+      # driver: "fluentd"
+      # options:
+        # fluentd-address: localhost:24224
+        # tag: httpd.access
 
 #  hystrix-dashboard:
 #    image: kbastani/hystrix-dashboard
@@ -67,10 +69,11 @@ services:
       MYSQL_ROOT_PASSWORD: 'root'
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       MYSQL_DATABASE: 'user_service'
-    logging:
-      driver: syslog
-      options:
-        syslog-address: "tcp://127.0.0.1:24224"
+    # logging:
+      # driver: "fluentd"
+      # options:
+        # fluentd-address: localhost:24224
+        # tag: httpd.access
 
   userservice:
     image: aista/user-service
@@ -80,19 +83,20 @@ services:
       - mysqlserver
     ports:
       - '8080'
-    logging:
-      driver: syslog
-      options:
-        syslog-address: "tcp://127.0.0.1:24224"
+    # logging:
+      # driver: "fluentd"
+      # options:
+        # fluentd-address: localhost:24224
+        # tag: httpd.access
 
-  # mongo:
-    # image: 'mongo:3.4.1'
-    # mem_limit: 512M
-    # container_name: 'mongo'
-    # ports:
-      # - '27017:27017'
-    # volumes:
-      # - 'mongo:/data/db'
+  mongo:
+    image: 'mongo:3.4.1'
+    mem_limit: 512M
+    container_name: 'mongo'
+    ports:
+      - '27017:27017'
+    volumes:
+      - 'mongo:/data/db'
 
 #  postgres:
 #    image: postgres
@@ -108,13 +112,13 @@ services:
 #    volumes:
 #      - ./db_volume:/var/lib/postgresql
 
-  # rabbitmq:
-    # image: rabbitmq:management
-    # mem_limit: 512M
-    # container_name: 'rabbitmq'
-    # ports:
-      # - "5672:5672"
-      # - "15672:15672"
+  rabbitmq:
+    image: rabbitmq:management
+    mem_limit: 512M
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
   # tripmanagementcmd:
     # image: aista/trip-management-cmd
@@ -142,28 +146,28 @@ services:
       # - mongo
       # - discoveryservice
 
-  # gmapsadapter:
-    # image: aista/gmaps-adapter
-    # mem_limit: 512M
-    # environment:
-      # - EUREKA_SERVER=discoveryservice
-      # - RABBIT_HOST=rabbitmq
-    # ports:
-      # - '8080'
-    # depends_on:
-      # - discoveryservice
+  gmapsadapter:
+    build: ./gmaps-adapter
+    mem_limit: 512M
+    environment:
+      - EUREKA_SERVER=discoveryservice
+      - RABBIT_HOST=rabbitmq
+    ports:
+      - '8080'
+    depends_on:
+      - discoveryservice
 
-  # calculationservice:
-    # image: aista/calculation-service
-    # mem_limit: 512M
-    # environment:
-      # - EUREKA_SERVER=discoveryservice
-      # - RABBIT_HOST=rabbitmq
-    # command: ["go", "run", "main.go"]
-    # ports:
-      # - '8080'
-    # depends_on:
-      # - discoveryservice
+  calculationservice:
+    build: ./calculation-service
+    mem_limit: 512M
+    environment:
+      - EUREKA_SERVER=discoveryservice
+      - RABBIT_HOST=rabbitmq
+    command: ["go", "run", "main.go"]
+    ports:
+      - '8080'
+    depends_on:
+      - discoveryservice
 
 #  passenger:
 #    image: aista/passenger
@@ -212,32 +216,32 @@ services:
       # - discoveryservice
 
       
-  fluentd:
-    build: $PWD/fluentd
-    mem_limit: 512M
-    volumes:
-      - $PWD/fluentd/conf:/fluentd/etc
-    links:
-      - elasticsearch
-    ports:
-      - "24224:24224"
-      - "24224:24224/udp"
-    logging:
-        driver: "json-file"
-        options:
-            max-size: 100m
-            max-file: "5"
+  # fluentd:
+    # build: ./fluentd
+    # mem_limit: 512M
+    # volumes:
+      # - ./fluentd/conf:/fluentd/etc
+    # links:
+      # - elasticsearch
+    # ports:
+      # - "24224:24224"
+      # - "24224:24224/udp"
+    # logging:
+        # driver: "json-file"
+        # options:
+            # max-size: 100m
+            # max-file: "5"
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.3.0
+  # elasticsearch:
+    # image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:5.3.0
-    mem_limit: 512M
-    links:
-      - elasticsearch
-    ports:
-      - "5601:5601"
+  # kibana:
+    # image: docker.elastic.co/kibana/kibana:6.4.0
+    # mem_limit: 512M
+    # links:
+      # - elasticsearch
+    # ports:
+      # - "5601:5601"
 
 
 volumes:
