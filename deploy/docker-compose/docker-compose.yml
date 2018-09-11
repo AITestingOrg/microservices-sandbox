@@ -2,6 +2,36 @@ version: '2.3'
 
 services:
 
+  fluentd:
+    build: ./fluentd
+    mem_limit: 512M
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    links:
+      - elasticsearch
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    logging:
+        driver: "json-file"
+        options:
+            max-size: 100m
+            max-file: "5"
+
+  elasticsearch:
+    image: elasticsearch:5.6.11
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  kibana:
+    image: kibana:5.6.11
+    mem_limit: 512M
+    links:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+      
   edgeservice:
     image: aista/edge-service
     mem_limit: 512M
@@ -9,11 +39,13 @@ services:
       - "8080:8080"
     depends_on:
       - discoveryservice
-    # logging:
-      # driver: "fluentd"
-      # options:
-        # fluentd-address: localhost:24224
-        # tag: httpd.access
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
   notificationservice:
     depends_on:
@@ -27,17 +59,27 @@ services:
     environment:
       - RABBIT_HOST=rabbitmq
       - EUREKA_SERVER=discoveryservice
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
   discoveryservice:
     image: aista/eureka
     mem_limit: 512M
     ports:
       - "8761:8761"
-    # logging:
-      # driver: "fluentd"
-      # options:
-        # fluentd-address: localhost:24224
-        # tag: httpd.access
+
+  rabbitmq:
+    image: rabbitmq:management
+    mem_limit: 512M
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
 #  hystrix-dashboard:
 #    image: kbastani/hystrix-dashboard
@@ -69,11 +111,6 @@ services:
       MYSQL_ROOT_PASSWORD: 'root'
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
       MYSQL_DATABASE: 'user_service'
-    # logging:
-      # driver: "fluentd"
-      # options:
-        # fluentd-address: localhost:24224
-        # tag: httpd.access
 
   userservice:
     image: aista/user-service
@@ -81,13 +118,15 @@ services:
     depends_on:
       - discoveryservice
       - mysqlserver
+    links:
+      - fluentd
     ports:
       - '8080'
-    # logging:
-      # driver: "fluentd"
-      # options:
-        # fluentd-address: localhost:24224
-        # tag: httpd.access
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
   mongo:
     image: 'mongo:3.4.1'
@@ -111,14 +150,6 @@ services:
 #      - '5432:5432'
 #    volumes:
 #      - ./db_volume:/var/lib/postgresql
-
-  rabbitmq:
-    image: rabbitmq:management
-    mem_limit: 512M
-    container_name: 'rabbitmq'
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
   # tripmanagementcmd:
     # image: aista/trip-management-cmd
@@ -147,7 +178,7 @@ services:
       # - discoveryservice
 
   gmapsadapter:
-    build: ./gmaps-adapter
+    build: C:\Users\Juan\Documents\Proyectos\Ultimate\gmaps-adapter
     mem_limit: 512M
     environment:
       - EUREKA_SERVER=discoveryservice
@@ -156,9 +187,16 @@ services:
       - '8080'
     depends_on:
       - discoveryservice
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
   calculationservice:
-    build: ./calculation-service
+    build: C:\Users\Juan\Documents\Proyectos\Ultimate\calculation-service
     mem_limit: 512M
     environment:
       - EUREKA_SERVER=discoveryservice
@@ -168,6 +206,13 @@ services:
       - '8080'
     depends_on:
       - discoveryservice
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
 #  passenger:
 #    image: aista/passenger
@@ -214,35 +259,6 @@ services:
       # - '4200:4200'
     # depends_on:
       # - discoveryservice
-
-      
-  # fluentd:
-    # build: ./fluentd
-    # mem_limit: 512M
-    # volumes:
-      # - ./fluentd/conf:/fluentd/etc
-    # links:
-      # - elasticsearch
-    # ports:
-      # - "24224:24224"
-      # - "24224:24224/udp"
-    # logging:
-        # driver: "json-file"
-        # options:
-            # max-size: 100m
-            # max-file: "5"
-
-  # elasticsearch:
-    # image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
-
-  # kibana:
-    # image: docker.elastic.co/kibana/kibana:6.4.0
-    # mem_limit: 512M
-    # links:
-      # - elasticsearch
-    # ports:
-      # - "5601:5601"
-
 
 volumes:
   mongo:
