@@ -4,6 +4,7 @@ services:
 
   fluentd:
     build: ./fluentd
+    container_name: fluentd
     mem_limit: 512M
     volumes:
       - ./fluentd/conf:/fluentd/etc
@@ -20,12 +21,14 @@ services:
 
   elasticsearch:
     image: elasticsearch:5.6.11
+    container_name: elasticsearch
     ports:
       - "9200:9200"
       - "9300:9300"
 
   kibana:
     image: kibana:5.6.11
+    container_name: kibana
     mem_limit: 512M
     links:
       - elasticsearch
@@ -34,9 +37,12 @@ services:
       
   edgeservice:
     image: aista/edge-service
+    container_name: edgeservice
     mem_limit: 512M
     ports:
       - "8080:8080"
+    environment:
+      - EUREKA_SERVER=discoveryservice
     depends_on:
       - discoveryservice
     links:
@@ -48,17 +54,18 @@ services:
         tag: httpd.access
 
   notificationservice:
-    depends_on:
-      - discoveryservice
-      - rabbitmq
     image: aista/notification-service
+    container_name: notificationservice
     mem_limit: 512M
-    command: notification-service
     ports:
       - "32700:32700"
+    command: notification-service
     environment:
       - RABBIT_HOST=rabbitmq
       - EUREKA_SERVER=discoveryservice
+    depends_on:
+      - discoveryservice
+      - rabbitmq
     links:
       - fluentd
     logging:
@@ -69,36 +76,23 @@ services:
 
   discoveryservice:
     image: aista/eureka
+    container_name: discoveryservice
     mem_limit: 512M
     ports:
       - "8761:8761"
 
   rabbitmq:
     image: rabbitmq:management
+    container_name: rabbitmq
     mem_limit: 512M
     container_name: 'rabbitmq'
     ports:
       - "5672:5672"
       - "15672:15672"
 
-#  hystrix-dashboard:
-#    image: kbastani/hystrix-dashboard
-#    container_name: hystrix-dashboard
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#    ports:
-#      - 6161:6161
-#
-#  config-service:
-#    build: config-service
-#    container_name: config-service
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#    ports:
-#      - 8888:8888
-
   mysqlserver:
     image: mysql:5.7
+    container_name: mysqlserver
     mem_limit: 512M
     volumes:
       - mysql-data:/var/lib/mysql:rw
@@ -114,6 +108,7 @@ services:
 
   userservice:
     image: aista/user-service
+    container_name: userservice
     mem_limit: 512M
     depends_on:
       - discoveryservice
@@ -121,7 +116,7 @@ services:
     links:
       - fluentd
     ports:
-      - '8080'
+      - '8091:8091'
     logging:
       driver: "fluentd"
       options:
@@ -130,6 +125,7 @@ services:
 
   mongo:
     image: 'mongo:3.4.1'
+    container_name: mongo
     mem_limit: 512M
     container_name: 'mongo'
     ports:
@@ -137,48 +133,9 @@ services:
     volumes:
       - 'mongo:/data/db'
 
-#  postgres:
-#    image: postgres
-#    mem_limit: 512M
-#    restart: always
-#    environment:
-#      POSTGRES_DB: 'passenger_db'
-#      POSTGRES_PASSWORD: "admin"
-#      POSTGRES_USER: "admin"
-#      PGDATA: ./postgres-data
-#    ports:
-#      - '5432:5432'
-#    volumes:
-#      - ./db_volume:/var/lib/postgresql
-
-  # tripmanagementcmd:
-    # image: aista/trip-management-cmd
-    # mem_limit: 512M
-    # environment:
-      # - RABBIT_HOST=rabbitmq
-      # - MONGO_HOST=mongo
-    # ports:
-      # - '8080'
-    # depends_on:
-      # - discoveryservice
-      # - rabbitmq
-      # - mongo
-
-  # tripmanagementquery:
-    # image: aista/trip-management-query
-    # mem_limit: 512M
-    # environment:
-      # - RABBIT_HOST=rabbitmq
-      # - MONGO_HOST=mongo
-    # ports:
-      # - '8080'
-    # depends_on:
-      # - rabbitmq
-      # - mongo
-      # - discoveryservice
-
   gmapsadapter:
-    build: C:\Users\Juan\Documents\Proyectos\Ultimate\gmaps-adapter
+    image: aista/gmaps-adapter
+    container_name: gmapsadapter
     mem_limit: 512M
     environment:
       - EUREKA_SERVER=discoveryservice
@@ -196,7 +153,8 @@ services:
         tag: httpd.access
 
   calculationservice:
-    build: C:\Users\Juan\Documents\Proyectos\Ultimate\calculation-service
+    image: aista/calculation-service
+    container_name: calculationservice
     mem_limit: 512M
     environment:
       - EUREKA_SERVER=discoveryservice
@@ -214,51 +172,24 @@ services:
         fluentd-address: localhost:24224
         tag: httpd.access
 
-#  passenger:
-#    image: aista/passenger
-#    mem_limit: 512M
-#    ports:
-#      - '8080'
-#    depends_on:
-#      - postgres
-#      - discoveryservice
-#
-#  driver-cmd:
-#    image: aista/driver-cmd
-#    mem_limit: 512M
-#    environment:
-#      - EUREKA_SERVER=discoveryservice
-#    ports:
-#      - '8080'
-#    depends_on:
-#      - rabbitmq
-#      - mongo
-#      - discoveryservice
-#
-#  driver-query:
-#    image: aista/driver-query
-#    mem_limit: 512M
-#    container_name: 'driver-query'
-#    environment:
-#      - RABBIT_HOST=rabbitmq
-#      - MONGO_HOST=mongo
-#    ports:
-#      - "8080"
-#    depends_on:
-#      - rabbitmq
-#      - mongo
-#      - discoveryservice
-
-  # frontend:
-    # image: aista/front-end
-    # mem_limit: 512M
-    # environment:
-      # - EUREKA_SERVER=discoveryservice
-      # - RABBIT_HOST=rabbitmq
-    # ports:
-      # - '4200:4200'
-    # depends_on:
-      # - discoveryservice
+  frontend:
+    image: aista/front-end
+    container_name: frontend
+    mem_limit: 512M
+    environment:
+      - EUREKA_SERVER=discoveryservice
+      - RABBIT_HOST=rabbitmq
+    ports:
+      - '4200:4200'
+    depends_on:
+      - discoveryservice
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
 
 volumes:
   mongo:
