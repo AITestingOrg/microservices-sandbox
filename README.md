@@ -1,6 +1,6 @@
 # Microservices Sandbox
 
-This project contains configuration files to deploy [AIST Microservices SandBox](https://github.com/AITestingOrg).
+This project contains configuration files to deploy [AIST Microservices SandBox](https://github.com/AITestingOrg?q=aist-sandbox).
 
 ## Prerequisites
 
